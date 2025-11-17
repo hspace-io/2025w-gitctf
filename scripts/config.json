@@ -1,0 +1,31 @@
+{
+    "player": "hy30nq",
+    "player_team": "solo",
+    "score_board": "https://github.com/hy30nq/test-for-git",
+    "repo_owner": "hy30nq",
+    "intended_pts": 50,
+    "unintended_pts": 150,
+    "round_frequency": 300,
+    "start_time": "2025-11-20T09:00:00+09:00",
+    "end_time": "2025-11-21T09:00:00+09:00",
+    "exploit_timeout": {
+        "injection_phase": 30,
+        "exercise_phase": 90
+    },
+    "teams": {
+        "solo": {
+            "repo_name": "test-for-git",
+            "pub_key_id": "9CB5E420",
+            "bug1": "TODO_SOLO_BUG1",
+            "bug2": "TODO_SOLO_BUG2",
+            "bug3": "TODO_SOLO_BUG3"
+        }
+    },
+    "individual": {
+        "hy30nq": {
+            "pub_key_id": "9CB5E420",
+            "team": "solo"
+        }
+    }
+}
+
