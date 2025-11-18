@@ -1,0 +1,31 @@
+{
+    "player": "",
+    "player_team": "",
+    "score_board": "",
+    "repo_owner": "",
+    "intended_pts": 100,
+    "unintended_pts": 1000,
+    "round_frequency": 1800,
+    "start_time": "2025-11-24T00:00:00+09:00",
+    "end_time": "2025-11-29T10:00:00+09:00",
+    "exploit_timeout": {
+        "injection_phase": 60,
+        "exercise_phase": 120
+    },
+    "teams": {
+        "team1": {
+            "repo_name": "",
+            "pub_key_id": "",
+            "bug1": "",
+            "bug2": "",
+            "bug3": "",
+            "bug4": ""
+        }
+    },
+    "individual": {
+        "UserID": {
+            "pub_key_id": "",
+            "team": ""
+        }
+    }
+}
