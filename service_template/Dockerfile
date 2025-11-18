@@ -20,7 +20,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-FROM i386/debian:latest
+FROM --platform=linux/amd64 i386/debian:latest
 
 # ======================================
 # Install your package here

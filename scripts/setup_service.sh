@@ -29,6 +29,6 @@ SERVICE_NAME=$1
 CONTAINERPORT=$2
 HOSTPORT=$3
 
-docker build -t $SERVICE_NAME .
+docker build --platform linux/amd64 -t $SERVICE_NAME . || exit 1
 
-docker run --rm -d --name $SERVICE_NAME --net=host $SERVICE_NAME
+docker run --platform linux/amd64 --rm -d --name $SERVICE_NAME --net=host $SERVICE_NAME || exit 1

@@ -104,7 +104,7 @@ def load_config(config_file):
 
 def prompt_warning(msg):
     print(msg)
-    print("Do you want to continue?",)
+    print("Do you want to continue?", end='')
     while True:
         ans = input("(y/n):")
         if ans.lower() == "y":
@@ -113,7 +113,7 @@ def prompt_warning(msg):
             print("[*] Script aborts.")
             sys.exit()
         else:
-            print("[*] Invalid input.",)
+            print("[*] Invalid input.", end='')
             continue
 
 def prompt_rmdir_warning(dir):

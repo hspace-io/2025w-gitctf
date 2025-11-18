@@ -20,7 +20,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-FROM i386/debian
+FROM --platform=linux/amd64 i386/debian
 # ======================================
 # Install your package here
 RUN sed -i 's/deb.debian.org/ftp.daumkakao.com/g' /etc/apt/sources.list

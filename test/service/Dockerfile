@@ -2,7 +2,7 @@
 # Git-based CTF - Sample Vulnerable Service
 ###############################################################################
 
-FROM i386/debian:latest
+FROM --platform=linux/amd64 debian:latest
 
 # ======================================
 # Install dependencies

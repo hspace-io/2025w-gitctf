@@ -44,7 +44,7 @@ def update_deferred(score, unint_attack_hist, freq, unintended_pts, end_time):
     curr_time = time.time()
     end_time = iso8601_to_timestamp(end_time)
     end_time = min(curr_time, end_time)
-    for attack_id, start_time in unint_attack_hist.iteritems():
+    for attack_id, start_time in unint_attack_hist.items():
         attacker = attack_id.split('_')[0]
         pts = compute_unintended(start_time, end_time, freq, unintended_pts)
         compute_score(score, attacker, pts)
@@ -80,8 +80,8 @@ def display_score(data, freq, unintended_pts, end_time, pin_time = None):
 
     if pin_time is None:
         # Print out
-        for team, points in sorted(score.iteritems(),
-                               key=lambda k,v: v, reverse=True):
+        for team, points in sorted(score.items(),
+                               key=lambda item: item[1], reverse=True):
             print('%-20s: %d' % (team, points))
     else:
         return score
