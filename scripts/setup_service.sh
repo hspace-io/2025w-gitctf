@@ -31,4 +31,4 @@ HOSTPORT=$3
 
 docker build --platform linux/amd64 --no-cache -t $SERVICE_NAME . || exit 1
 
-docker run --platform linux/amd64 --rm -d --name $SERVICE_NAME --net=host $SERVICE_NAME || exit 1
+docker run --platform linux/amd64 --rm -d --name $SERVICE_NAME -p "$HOSTPORT:$CONTAINERPORT" $SERVICE_NAME || exit 1
