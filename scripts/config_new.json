@@ -39,7 +39,7 @@
         },
         "team_3": {
             "repo_name": "2025w-gitctf-team3",
-            "pub_key_id": "",
+            "pub_key_id": "8C4F9437",
             "bug1": "9ee26887b238db5d83570d3c11eb453fcd05dc94",
             "bug2": "dc11cc4722bffb289d06e120d6c07fd42a0bcd8b",
             "bug3": "74ce8f63a29f2f4ea7d9afe08ac08eece3f9bcc2",
