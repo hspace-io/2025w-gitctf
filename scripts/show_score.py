@@ -53,68 +53,20 @@ def display_score(data, freq, unintended_pts, end_time, pin_time = None):
     f = StringIO(data)
     reader = csv.reader(f, delimiter=',')
     score = {}
-    history = set()
-    num_solver = {}
-    unint_attack_hist = {}
     for row in reader:
-        attacker, defender, branch, kind, points = row[1], row[2], row[3], \
-                row[4], int(row[5])
-        attack_id = attacker + "_" + defender + "_" + branch
-        event_id = attack_id + "_" + kind
+        if not row or len(row) < 6:
+            continue
         t = float(row[0])
         if pin_time is not None and t >= float(pin_time):
             break
-        if event_id in history: continue
-        history.add(event_id)
-        # unintended bugs
-        if attack_id in unint_attack_hist and points == 0:
-            if points != 0: continue
-            s = unint_attack_hist[attack_id]
-            pts = compute_unintended(s, t, freq, unintended_pts)
-            compute_score(score, attacker, pts)
-            unint_attack_hist.pop(attack_id, None)
-        else:
-            unint_attack_hist[attack_id] = t
-    # We now update all the deferred points for unintended attacks
-    update_deferred(score, unint_attack_hist, freq, unintended_pts, end_time)
+        attacker, points = row[1], int(row[5])
+        compute_score(score, attacker, points)
 
     if pin_time is None:
-        # Print out
-        for team, points in sorted(score.items(),
-                               key=lambda item: item[1], reverse=True):
+        for team, points in sorted(score.items(), key=lambda item: item[1], reverse=True):
             print('%-20s: %d' % (team, points))
     else:
         return score
-
-def make_html(log, config):
-    mydir = os.path.dirname(os.path.abspath(__file__))
-    tmplfile = os.path.join(mydir, 'score.template')
-    with open(tmplfile, 'r') as f:
-        html = f.read()
-
-    col_var = ''
-    players = config['individual'].keys()
-    for player in players:
-        col_var += '    data.addColumn("number","%s");\n' % player
-
-    graph_data = ''
-    for key in sorted(log):
-        graph_data += '        ['
-        graph_data += '%s, ' % key
-        for player in players:
-            if player in log[key]:
-                graph_data += '%s, ' % str(log[key][player])
-            else:
-                graph_data += '0, '
-
-        graph_data = graph_data.rstrip(', ')
-        graph_data += '],\n'
-
-    s = Template(html)
-    html = s.substitute(column=col_var, data = graph_data)
-
-    with open('score.html', 'w') as f:
-        f.write(html)
 
 def show_score(token, config_file):
     config = load_config(config_file)
@@ -133,6 +85,8 @@ def show_score(token, config_file):
         print('[*] Failed to get the score file.')
         sys.exit()
     csv = decode_content(r)
+    if isinstance(csv, bytes):
+        csv = csv.decode('utf-8')
     display_score(csv, freq, unintended_pts, end_time)
 
     hour_from_start = 0
@@ -147,5 +101,3 @@ def show_score(token, config_file):
     for i in range(graph_start_time, graph_end_time, 3600):
         log[hour_from_start] = display_score(csv, freq, unintended_pts, end_time, i)
         hour_from_start = hour_from_start+1
-
-    make_html(log, config)

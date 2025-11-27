@@ -275,8 +275,6 @@ def start_eval(config, github):
     return
 
 def evaluate(config_file, token):
-    importlib.reload(sys)
-    sys.setdefaultencoding('utf-8')
     config = load_config(config_file)
     github = Github(config['player'], token)
     return start_eval(config, github)
