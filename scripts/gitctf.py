@@ -61,12 +61,12 @@ def add_branch(parser):
                         help="specify the target branch")
 
 def add_host_port(parser):
-    parser.add_argument("--host-port", metavar="NUM", default="4000",
-                        help="specify the host port number (default: 4000)")
+    parser.add_argument("--host-port", metavar="NUM", default="5000",
+                        help="specify the host port number (default: 5000)")
 
 def add_service_port(parser):
-    parser.add_argument("--service-port", metavar="NUM", default="4000",
-                        help="specify the service port number (default: 4000)")
+    parser.add_argument("--service-port", metavar="NUM", default="5000",
+                        help="specify the service port number (default: 5000)")
 
 def add_conf(parser):
     parser.add_argument("--conf", metavar="FILE", default="config.json",
@@ -214,8 +214,8 @@ def exec_exploit_main(prog, options):
     add_service_name(parser)
     parser.add_argument("--ip", metavar="ADDR", default="127.0.0.1",
                         help="specify the IP address (default: 127.0.0.1)")
-    parser.add_argument("--port", metavar="NUM", default="4000",
-                        help="specify the IP address (default: 4000)")
+    parser.add_argument("--port", metavar="NUM", default="5000",
+                        help="specify the IP address (default: 5000)")
     parser.add_argument("--timeout", metavar="SEC", required=True,
                         help="specify timeout for exploit")
     args = parser.parse_args(options)

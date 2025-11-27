@@ -1,0 +1,155 @@
+{
+    "player": "hspace-io",
+    "player_team": "organization",
+    "score_board": "https://github.com/hspace-io/2025w-gitctf-score.git",
+    "repo_owner": "hspace-io",
+    "intended_pts": 100,
+    "unintended_pts": 100,
+    "round_frequency": 300,
+    "start_time": "2025-11-26T10:00:00+09:00",
+    "end_time": "2025-11-29T10:00:00+09:00",
+    "exploit_timeout": {
+        "injection_phase": 30,
+        "exercise_phase": 90
+    },
+    "teams": {
+        "instructor": {
+            "repo_name": "2025w-gitctf-instructor",
+            "pub_key_id": "DCC2CEC0",
+            "bug1": "0000000000000000000000000000000000000000",
+            "bug2": "0000000000000000000000000000000000000000",
+            "bug3": "0000000000000000000000000000000000000000",
+            "bug4": "0000000000000000000000000000000000000000"
+        },
+        "team_1": {
+            "repo_name": "2025w-gitctf-team1",
+            "pub_key_id": "79CBBC90",
+            "bug1": "405b8f7f31a99feaffec2be9525812d224aa5290",
+            "bug2": "7db717e07915f1105b6515acc07f63af394b2705",
+            "bug3": "ad47297b92735e04ff3c1730b039cf953ba76e19",
+            "bug4": "bff7402d89e2c53a82b9343c4c4aa6201f00b195"
+        },
+        "team_2": {
+            "repo_name": "2025w-gitctf-team2",
+            "pub_key_id": "FAC62350",
+            "bug1": "c4b94e6da51b12b82163a0ac472844665c9c3658",
+            "bug2": "dabc1094b5b624bf0931b1cc69e110e96b294ba2",
+            "bug3": "5b98478729b71b5ca9520f476b48f4e65dd2ddac",
+            "bug4": "88a56fcf5ea38990135f41d28a706d78bb52884a"
+        },
+        "team_3": {
+            "repo_name": "2025w-gitctf-team3",
+            "pub_key_id": "",
+            "bug1": "9ee26887b238db5d83570d3c11eb453fcd05dc94",
+            "bug2": "dc11cc4722bffb289d06e120d6c07fd42a0bcd8b",
+            "bug3": "74ce8f63a29f2f4ea7d9afe08ac08eece3f9bcc2",
+            "bug4": "160d70101f679b12ac44d93ab362e60cc26ed974"
+        },
+        "team_4": {
+            "repo_name": "2025w-gitctf-team4",
+            "pub_key_id": "D75DFD4E",
+            "bug1": "c38ef0fe47caa01b53cd83c6e7734f30f5ae0a43",
+            "bug2": "a545498aa2331bced475d6bd113d9565c42abba1",
+            "bug3": "774aa9e82d8b6001d991c478221e9089425b1e9c",
+            "bug4": "f04e9c4b76e3ee2f7a37ba6a003b963380599b1d"
+        }
+    },
+    "individual": {
+        "hspace-io": {
+            "pub_key_id": "DCC2CEC0",
+            "team": "team_1"
+        },
+        "yd1ng": {
+            "pub_key_id": "4DF66DCA",
+            "team": "team_2"
+        },
+        "\uc138\uc778": {
+            "pub_key_id": "83D46E80",
+            "team": "team_4"
+        },
+        "GONA": {
+            "pub_key_id": "AC4C6FF8",
+            "team": "team_2"
+        },
+        "\uc774\ud6a8\uc815": {
+            "pub_key_id": "0360AB1B",
+            "team": "team_2"
+        },
+        "nagox": {
+            "pub_key_id": "B7016FEB",
+            "team": "team_1"
+        },
+        "\ubc15\uc815\uc6b0": {
+            "pub_key_id": "EE85484B",
+            "team": "team_1"
+        },
+        "\uc9c0\uc5f0\uacbd": {
+            "pub_key_id": "EE4CBC90",
+            "team": "team_1"
+        },
+        "\ubc30\uc5f0\uc8fc": {
+            "pub_key_id": "5274BAA4",
+            "team": "team_2"
+        },
+        "\uc870\uc900\ud558": {
+            "pub_key_id": "E1F33E70",
+            "team": "team_4"
+        },
+        "c0mpos3r": {
+            "pub_key_id": "AB13DD6A",
+            "team": "team_3"
+        },
+        "SWLUG_\uc774\uc8fc\ud61c": {
+            "pub_key_id": "CCC583FD",
+            "team": "team_3"
+        },
+        "\uc774\ubcd1\ud604": {
+            "pub_key_id": "BE23E1CF",
+            "team": "team_1"
+        },
+        "hinoohshi": {
+            "pub_key_id": "2E4FC16D",
+            "team": "team_4"
+        },
+        "\ucd5c\uc815\uc6b0": {
+            "pub_key_id": "B8994053",
+            "team": "team_3"
+        },
+        "\ucd5c\ud5cc": {
+            "pub_key_id": "CA5EE630",
+            "team": "team_1"
+        },
+        "fox5t4r": {
+            "pub_key_id": "7809C14F",
+            "team": "team_4"
+        },
+        "woot": {
+            "pub_key_id": "FAC62350",
+            "team": "team_2"
+        },
+        "\uc720\ud604\uc601": {
+            "pub_key_id": "AE5BA92E",
+            "team": "team_3"
+        },
+        "\uc724\ud0dc": {
+            "pub_key_id": "AD3F64C9",
+            "team": "team_3"
+        },
+        "\uad8c\ubbfc\uc900": {
+            "pub_key_id": "0016302D",
+            "team": "team_4"
+        },
+        "hongsdream": {
+            "pub_key_id": "DB770FFF",
+            "team": "team_1"
+        },
+        "sso29": {
+            "pub_key_id": "676AED92",
+            "team": "team_4"
+        },
+        "hy30nq": {
+            "pub_key_id": "DCC2CEC0",
+            "team": "team_1"
+        }
+    }
+}

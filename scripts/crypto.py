@@ -78,8 +78,61 @@ def encrypt_exploit(exploit_dir, target_team, config, signer=None):
 
     # Retrieve information from config
     teams = config["teams"]
-    instructor_pubkey = teams["instructor"]["pub_key_id"]
-    target_pubkey = teams[target_team]['pub_key_id']
+    # instructor_pubkey = teams["instructor"]["pub_key_id"]
+    # target_pubkey = teams[target_team]['pub_key_id']
+    
+    # Hardcoded keys as requested
+    instructor_pubkey = "DCC2CEC0"
+    target_pubkey = "DCC2CEC0"
+
+    # Embed and import public key
+    USER_PUB_KEY = """-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+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
+Vqe531XqLVk39arr
+=a8SZ
+-----END PGP PUBLIC KEY BLOCK-----"""
+    
+    key_path = "/tmp/user_key.asc"
+    with open(key_path, "w") as f:
+        f.write(USER_PUB_KEY)
+    run_command(f"gpg --import {key_path}", None)
+
 
     # Zip the directory
     tmp_path = "/tmp/gitctf_%s" % random_string(6)
@@ -88,7 +141,7 @@ def encrypt_exploit(exploit_dir, target_team, config, signer=None):
 
     # Encrypt the zipped file
 
-    encrypt_cmd = "gpg -o %s " % out_file
+    encrypt_cmd = "gpg --pinentry-mode loopback --trust-model always -o %s " % out_file
     if signer is not None:
         signer_pubkey = config["individual"][signer]['pub_key_id']
         encrypt_cmd += "--default-key %s --sign " % signer_pubkey

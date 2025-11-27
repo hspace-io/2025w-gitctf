@@ -47,7 +47,8 @@ def submit(exploit_dir, service_dir, branch, target, config_file, token=None):
             % verified_branch)
 
     # Not encrypt exploit
-    signer = config["player"]
+    # signer = config["player"]
+    signer = None
     encrypted_exploit = encrypt_exploit(exploit_dir, target, config, signer)
     if encrypted_exploit is None:
         print("[*] Failed to encrypt exploit")

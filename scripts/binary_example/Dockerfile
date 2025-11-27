@@ -38,7 +38,7 @@ COPY vuln /service/vuln
 
 COPY service_conf /etc/xinetd.d/
 
-RUN echo "service_conf 4000/tcp" >> /etc/services
+RUN echo "service_conf 5000/tcp" >> /etc/services
 
 RUN service xinetd restart
 ENTRYPOINT ["xinetd", "-dontfork"]
