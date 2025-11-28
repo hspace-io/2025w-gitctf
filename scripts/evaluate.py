@@ -68,22 +68,51 @@ def get_issue_id(noti):
 def get_issue_gen_time(noti):
     return iso8601_to_timestamp(noti['updated_at'])
 
-def get_issues(target_repos, github):
+
+
+def get_issues_new(config, target_repos, github):
     issues = []
-    query = '/notifications'
-    try:
-        notifications, interval = github.poll(query)
-    except ConnectionError:
-        return [], 60
-    for noti in reversed(notifications):
-        if noti['unread'] and is_issue(noti) and is_target(noti, target_repos):
-            num = get_issue_number(noti)
-            id = get_issue_id(noti)
-            gen_time = get_issue_gen_time(noti)
-            issues.append((noti['repository']['name'], num, id, gen_time))
+    interval = 10 # Poll more frequently or keep 60? 60 is safe.
+    
+    owner = config['repo_owner']
+    
+    for repo_name in target_repos:
+        query = '/repos/%s/%s/issues?state=open&labels=bug' % (owner, repo_name)
+        # We can filter by label if we want, but let's just get all open issues and filter manually
+        # to match the original logic which filtered by "is_issue".
+        # Actually, let's just get all open issues.
+        query = '/repos/%s/%s/issues?state=open' % (owner, repo_name)
+        
+        try:
+            repo_issues = github.get(query)
+            if repo_issues is None:
+                continue
+        except Exception as e:
+            print(f"[*] Failed to fetch issues for {repo_name}: {e}")
+            continue
+            
+        for issue in repo_issues:
+            # Ignore submissions from the repo owner (admin/maintainer)
+            if issue['user']['login'] == owner:
+                print(f"[*] Skipping submission from admin: {issue['user']['login']}")
+                continue
+
+            # Check if already processed
+            labels = [l['name'] for l in issue.get('labels', [])]
+            if 'eval' in labels or 'verified' in labels or 'failed' in labels or 'defended' in labels:
+                continue
+                
+            # It's a new candidate
+            num = issue['number']
+            id = None # No notification ID
+            gen_time = iso8601_to_timestamp(issue['updated_at'])
+            issues.append((repo_name, num, id, gen_time))
+            
     return issues, interval
 
 def mark_as_read(issue_id, github):
+    if issue_id is None:
+        return
     query = '/notifications/threads/' + issue_id
     return github.patch(query, None)
 
@@ -95,6 +124,55 @@ def get_defender(config, target_repo):
             defender = team
             break
     return defender
+
+# Cache for user teams to avoid repeated API calls
+user_team_cache = {}
+
+def get_user_team(user, config, github):
+    # 1. Check config first
+    if user in config['individual']:
+        return config['individual'][user]['team']
+    
+    # 2. Check cache
+    if user in user_team_cache:
+        return user_team_cache[user]
+        
+    # 3. Check collaboration status
+    print(f"[*] User {user} not in config. Checking collaboration status...")
+    repo_owner = config['repo_owner']
+    for team_name, team_info in config['teams'].items():
+        repo_name = team_info['repo_name']
+        # Check if user is a collaborator
+        # API: GET /repos/{owner}/{repo}/collaborators/{username}
+        query = f"/repos/{repo_owner}/{repo_name}/collaborators/{user}"
+        try:
+            # github.get returns None on failure (non-200/201 usually, but let's check implementation)
+            # The github.py implementation returns None if status code doesn't match expected.
+            # For this endpoint, 204 means is a collaborator, 404 means not.
+            # However, github.get expects 200 by default.
+            # We need to use session directly or modify github.py, but let's try to use github.get with expected_code=204
+            # Wait, github.py `get` returns json.loads(content). 204 has no content.
+            # So github.get will fail to parse JSON for 204.
+            # Let's check github.py again.
+            pass 
+        except:
+            pass
+            
+    # Since modifying github.py is risky/extra work, let's use a trick or just use the session if accessible.
+    # github.session is available.
+    
+    for team_name, team_info in config['teams'].items():
+        repo_name = team_info['repo_name']
+        url = f"{github.url}/repos/{repo_owner}/{repo_name}/collaborators/{user}"
+        res = github.session.get(url)
+        if res.status_code == 204:
+            print(f"[*] Found {user} in {team_name}")
+            user_team_cache[user] = team_name
+            return team_name
+            
+    print(f"[*] User {user} not found in any team.")
+    user_team_cache[user] = None
+    return None
 
 def sync_scoreboard(scoreboard_dir):
     run_command('git reset --hard', scoreboard_dir)
@@ -130,23 +208,41 @@ def commit_and_push(scoreboard_dir):
     if r != 0:
         print('[*] Failed to commit score.csv.')
         return False
-    _, _, r = run_command('git push origin master', scoreboard_dir)
+    _, _, r = run_command('git push origin HEAD', scoreboard_dir)
     if r != 0:
         print('[*] Failed to push the score.')
         return False
     rmfile(os.path.join(scoreboard_dir, msg_file))
     return True
 
-def find_the_last_attack(scoreboard_dir, timestamp, info):
+def find_the_last_attack(scoreboard_dir, timestamp, info, config, github):
     last_commit = None
     scoreboard_path = os.path.join(scoreboard_dir, 'score.csv')
+    
+    # Resolve attacker team dynamically
+    attacker_team = get_user_team(info['attacker'], config, github)
+    
     if os.path.isfile(scoreboard_path):
         with open(scoreboard_path) as f:
             reader = csv.reader(f, delimiter=',')
             for row in reader:
-                if int(row[0]) >= timestamp and len(row[4]) == 40:
-                    if row[1] == info['attacker'] and row[2] == info['defender']:
-                        if row[3] == info['branch']:
+                try:
+                    row_timestamp = int(float(row[0]))
+                except ValueError:
+                    continue
+                    
+                if row_timestamp >= timestamp and len(row[4]) == 40:
+                    # Check if the attack is against the same defender and branch
+                    if row[2] == info['defender'] and row[3] == info['branch']:
+                        # Check if the attacker is from the same team
+                        row_attacker = row[1]
+                        row_attacker_team = get_user_team(row_attacker, config, github)
+                        
+                        # If teams match (and are not None), it's a duplicate attack from the same team
+                        if attacker_team and row_attacker_team and attacker_team == row_attacker_team:
+                            last_commit = row[4]
+                        # Fallback: if team info is missing, check username equality (legacy behavior)
+                        elif row_attacker == info['attacker']:
                             last_commit = row[4]
     return last_commit
 
@@ -168,7 +264,7 @@ def get_next_commit(last_commit, defender, branch, config):
 def process_unintended(repo_name, num, config, gen_time, info, scoreboard, id,
                         github, repo_owner):
     unintended_pts = config['unintended_pts']
-    target_commit = find_the_last_attack(scoreboard, gen_time, info)
+    target_commit = find_the_last_attack(scoreboard, gen_time, info, config, github)
 
     if target_commit is None:
         # This exploit is previously unseen, give point.
@@ -231,7 +327,16 @@ def process_issue(repo_name, num, id, config, gen_time, github, scoreboard):
                 log + '\n\n[*] The exploit did not work.', id, github)
         return
 
-    if config['individual'][attacker]['team'] == defender:
+        return
+    
+    attacker_team = get_user_team(attacker, config, github)
+    if attacker_team is None:
+        failure_action(repo_owner, repo_name, num, \
+                '[*] User %s is not recognized (not in config and not a collaborator).' % attacker, \
+                id, github)
+        return
+
+    if attacker_team == defender:
         failure_action(repo_owner, repo_name, num, \
                 '[*] Self-attack is not allowed: %s.' % attacker, \
                 id, github)
@@ -248,22 +353,36 @@ def process_issue(repo_name, num, id, config, gen_time, github, scoreboard):
     process_unintended(repo_name, num, config, gen_time, info, scoreboard,
             id, github, repo_owner)
 
-def prepare_scoreboard_repo(url):
+def prepare_scoreboard_repo(url, token):
     path = get_github_path(url).split('/')
     scoreboard_owner = path[0]
     scoreboard_name = path[1]
     scoreboard_dir = '.score'
     clone(scoreboard_owner, scoreboard_name, False, scoreboard_dir)
+    
+    # Configure remote with token for push access
+    if token:
+        auth_url = f"https://{token}@github.com/{scoreboard_owner}/{scoreboard_name}.git"
+        run_command(f"git remote set-url origin {auth_url}", scoreboard_dir)
+        
     return scoreboard_dir
 
 def start_eval(config, github):
     target_repos = get_target_repos(config)
-    scoreboard = prepare_scoreboard_repo(config['score_board'])
+    # We need to pass the token to prepare_scoreboard_repo. 
+    # github object has the token in session headers but it's cleaner if passed or extracted.
+    # github.session.headers['Authorization'] is 'token ...'
+    token = None
+    auth_header = github.session.headers.get('Authorization')
+    if auth_header and auth_header.startswith('token '):
+        token = auth_header.split(' ')[1]
+        
+    scoreboard = prepare_scoreboard_repo(config['score_board'], token)
     finalize = False
     while (not finalize):
         if (is_timeover(config)):
             finalize = True
-        issues, interval = get_issues(target_repos, github)
+        issues, interval = get_issues_new(config, target_repos, github)
         if not issues:
             print('[*] No news. Sleep for %d seconds.' % interval)
             time.sleep(interval)

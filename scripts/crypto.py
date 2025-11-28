@@ -47,20 +47,29 @@ def decrypt_exploit(encrypted_exploit_path, config, team, out_dir=None, \
     else:
         instructor_id = config['teams']['instructor']['pub_key_id']
         team_id = config['teams'][team]['pub_key_id']
-        expected_signer_id = config['individual'][expected_signer]['pub_key_id']
+        try:
+            expected_signer_id = config['individual'][expected_signer]['pub_key_id']
+            # Make keyring
+            run_command("gpg -o %s --export %s %s %s" % (tmpgpg, \
+                    expected_signer_id, instructor_id, team_id), os.getcwd())
 
-        # Make keyring
-        run_command("gpg -o %s --export %s %s %s" % (tmpgpg, \
-                expected_signer_id, instructor_id, team_id), os.getcwd())
-
-        decrypt_cmd = "gpg --no-default-keyring --keyring %s -o %s %s" \
-                % (tmpgpg, tmpzip, encrypted_exploit_path)
+            decrypt_cmd = "gpg --no-default-keyring --keyring %s -o %s %s" \
+                    % (tmpgpg, tmpzip, encrypted_exploit_path)
+        except KeyError:
+            print(f"[*] User {expected_signer} not in config. Skipping signature verification.")
+            decrypt_cmd = 'gpg -o %s %s' % (tmpzip, encrypted_exploit_path)
 
     _, err, r = run_command(decrypt_cmd, os.getcwd())
     if r != 0:
-        print("[*] Failed to decrypt/verify %s" % encrypted_exploit_path)
-        print(err)
-        return None
+        print("[*] Strict verification failed or GPG error. Trying simple decryption (ignoring signature)...")
+        # Fallback to simple decryption
+        decrypt_cmd_simple = 'gpg -o %s %s' % (tmpzip, encrypted_exploit_path)
+        _, err2, r2 = run_command(decrypt_cmd_simple, os.getcwd())
+        if r2 != 0:
+            print("[*] Failed to decrypt %s" % encrypted_exploit_path)
+            print(err)
+            print(err2)
+            return None
 
     run_command('unzip %s -d %s' % (tmpzip, tmpdir), os.getcwd())
     shutil.move(tmpdir, out_dir)

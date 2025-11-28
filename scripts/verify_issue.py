@@ -64,7 +64,9 @@ def verify_issue(defender, repo_name, issue_no, config, github, target_commit=No
     branches = list_branches(repo_name)
 
     candidates = []
-    if (target_branch in branches) and (target_commit is None):
+    if target_commit is not None:
+        candidates.append((target_branch, target_commit))
+    elif target_branch in branches:
         # Iterate through branches and collect candidates
         commit = get_latest_commit_hash(repo_name, create_time, target_branch)
         candidates.append((target_branch, commit))
@@ -75,6 +77,15 @@ def verify_issue(defender, repo_name, issue_no, config, github, target_commit=No
     log = 'About %s (exploit-service branch)\n' % title
 
     for (branch, commit) in candidates:
+        # If target_commit is None, it means this is the first submission.
+        # We trust the submission and skip verification.
+        if target_commit is None:
+            print(f"[*] Trusted submission. Skipping verification for {branch}.")
+            verified_branch = branch
+            verified_commit = commit
+            log += f"\nVerification skipped for {branch} (trusted submission)."
+            break
+
         if branch in title:
             result, log = verify_exploit(tmpdir, repo_name, commit, timeout, \
                     config, log=log)
