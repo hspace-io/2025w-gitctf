@@ -76,7 +76,9 @@ def show_score(token, config_file):
     end_time = config['end_time']
     start_time = config['start_time']
     path = get_github_path(scoreboard_url)
-    g = Github(config['player'], token)
+    # 토큰이 없으면 인증 없이 접근 (public repository용)
+    username = config.get('player', '') if token else ''
+    g = Github(username, token)
     if g.get('/repos/' + path) is None:
         print('[*] Failed to access the repository %s' % path)
         sys.exit()

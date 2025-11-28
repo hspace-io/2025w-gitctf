@@ -63,9 +63,14 @@ class Github():
     def __init__(self, username, token=None):
         self.session = requests.Session()
         if token is None:
-            print('Github ID: %s' % username)
-            password = getpass.getpass('Password: ')
-            self.session.auth = (username, password)
+            # 토큰이 없으면 인증 없이 요청 (public repository 접근용)
+            # username이 None이거나 빈 문자열이면 인증 없이 진행
+            if username is None or username == '':
+                pass  # 인증 없이 진행
+            else:
+                print('Github ID: %s' % username)
+                password = getpass.getpass('Password: ')
+                self.session.auth = (username, password)
         else:
             self.session.headers['Authorization'] = 'token %s' % token
 
