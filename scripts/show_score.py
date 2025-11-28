@@ -26,7 +26,8 @@ import sys
 import csv
 import json
 import time
-from utils import load_config, iso8601_to_timestamp, is_timeover
+import requests
+from utils import load_config, iso8601_to_timestamp, is_timeover, get_user_team
 from github import Github, decode_content, get_github_path
 from io import StringIO
 from string import Template
@@ -49,7 +50,7 @@ def update_deferred(score, unint_attack_hist, freq, unintended_pts, end_time):
         pts = compute_unintended(start_time, end_time, freq, unintended_pts)
         compute_score(score, attacker, pts)
 
-def display_score(data, freq, unintended_pts, end_time, pin_time = None):
+def display_score(data, freq, unintended_pts, end_time, config, github, pin_time = None):
     f = StringIO(data)
     reader = csv.reader(f, delimiter=',')
     score = {}
@@ -60,7 +61,16 @@ def display_score(data, freq, unintended_pts, end_time, pin_time = None):
         if pin_time is not None and t >= float(pin_time):
             break
         attacker, points = row[1], int(row[5])
-        compute_score(score, attacker, points)
+        attacker, points = row[1], int(row[5])
+        
+        # Resolve team
+        team = get_user_team(attacker, config, github)
+        if team:
+            compute_score(score, team, points)
+        else:
+            # If no team found (e.g. admin or unmapped), maybe skip or show as user?
+            # User requested team scores. Let's skip if not in a team (like admin).
+            pass
 
     if pin_time is None:
         for team, points in sorted(score.items(), key=lambda item: item[1], reverse=True):
@@ -76,20 +86,46 @@ def show_score(token, config_file):
     end_time = config['end_time']
     start_time = config['start_time']
     path = get_github_path(scoreboard_url)
-    # 토큰이 없으면 인증 없이 접근 (public repository용)
+    # Try to fetch raw file first to avoid API rate limits
+    # https://raw.githubusercontent.com/{owner}/{repo}/main/score.csv
+    
+    raw_base = f"https://raw.githubusercontent.com/{path}"
+    csv_content = None
+    
+    # Try main branch
+    try:
+        r = requests.get(f"{raw_base}/main/score.csv")
+        if r.status_code == 200:
+            csv_content = r.text
+    except:
+        pass
+        
+    # Try master branch if main failed
+    if csv_content is None:
+        try:
+            r = requests.get(f"{raw_base}/master/score.csv")
+            if r.status_code == 200:
+                csv_content = r.text
+        except:
+            pass
+            
+    # Fallback to API if raw fetch failed (e.g. private repo with token)
     username = config.get('player', '') if token else ''
     g = Github(username, token)
-    if g.get('/repos/' + path) is None:
-        print('[*] Failed to access the repository %s' % path)
-        sys.exit()
-    r = g.get('/repos/' + path + '/contents/' + 'score.csv')
-    if r is None:
-        print('[*] Failed to get the score file.')
-        sys.exit()
-    csv = decode_content(r)
-    if isinstance(csv, bytes):
-        csv = csv.decode('utf-8')
-    display_score(csv, freq, unintended_pts, end_time)
+    if csv_content is None:
+        print("[*] Raw fetch failed. Falling back to API...")
+        if g.get('/repos/' + path) is None:
+            print('[*] Failed to access the repository %s' % path)
+            sys.exit()
+        r = g.get('/repos/' + path + '/contents/' + 'score.csv')
+        if r is None:
+            print('[*] Failed to get the score file.')
+            sys.exit()
+        csv_content = decode_content(r)
+        if isinstance(csv_content, bytes):
+            csv_content = csv_content.decode('utf-8')
+            
+    display_score(csv_content, freq, unintended_pts, end_time, config, g)
 
     hour_from_start = 0
     log = {}
@@ -101,5 +137,5 @@ def show_score(token, config_file):
         graph_end_time = int(time.time())
 
     for i in range(graph_start_time, graph_end_time, 3600):
-        log[hour_from_start] = display_score(csv, freq, unintended_pts, end_time, i)
+        log[hour_from_start] = display_score(csv_content, freq, unintended_pts, end_time, config, g, i)
         hour_from_start = hour_from_start+1

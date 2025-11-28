@@ -32,7 +32,7 @@ import calendar
 from issue import is_closed, create_comment, close_issue
 from issue import create_label, update_label, get_github_issue
 from cmd import run_command
-from utils import load_config, rmdir, rmfile, iso8601_to_timestamp, is_timeover
+from utils import load_config, rmdir, rmfile, iso8601_to_timestamp, is_timeover, get_user_team
 from github import Github, get_github_path
 from git import clone, checkout, get_next_commit_hash
 from verify_issue import verify_issue
@@ -92,8 +92,9 @@ def get_issues_new(config, target_repos, github):
             continue
             
         for issue in repo_issues:
-            # Ignore submissions from the repo owner (admin/maintainer)
-            if issue['user']['login'] == owner:
+            # Ignore submissions from the repo owner (admin/maintainer) and specific admins
+            ignored_users = [owner, 'hy30nq', 'Ark3a', 'br0nzu']
+            if issue['user']['login'] in ignored_users:
                 print(f"[*] Skipping submission from admin: {issue['user']['login']}")
                 continue
 
@@ -125,54 +126,7 @@ def get_defender(config, target_repo):
             break
     return defender
 
-# Cache for user teams to avoid repeated API calls
-user_team_cache = {}
 
-def get_user_team(user, config, github):
-    # 1. Check config first
-    if user in config['individual']:
-        return config['individual'][user]['team']
-    
-    # 2. Check cache
-    if user in user_team_cache:
-        return user_team_cache[user]
-        
-    # 3. Check collaboration status
-    print(f"[*] User {user} not in config. Checking collaboration status...")
-    repo_owner = config['repo_owner']
-    for team_name, team_info in config['teams'].items():
-        repo_name = team_info['repo_name']
-        # Check if user is a collaborator
-        # API: GET /repos/{owner}/{repo}/collaborators/{username}
-        query = f"/repos/{repo_owner}/{repo_name}/collaborators/{user}"
-        try:
-            # github.get returns None on failure (non-200/201 usually, but let's check implementation)
-            # The github.py implementation returns None if status code doesn't match expected.
-            # For this endpoint, 204 means is a collaborator, 404 means not.
-            # However, github.get expects 200 by default.
-            # We need to use session directly or modify github.py, but let's try to use github.get with expected_code=204
-            # Wait, github.py `get` returns json.loads(content). 204 has no content.
-            # So github.get will fail to parse JSON for 204.
-            # Let's check github.py again.
-            pass 
-        except:
-            pass
-            
-    # Since modifying github.py is risky/extra work, let's use a trick or just use the session if accessible.
-    # github.session is available.
-    
-    for team_name, team_info in config['teams'].items():
-        repo_name = team_info['repo_name']
-        url = f"{github.url}/repos/{repo_owner}/{repo_name}/collaborators/{user}"
-        res = github.session.get(url)
-        if res.status_code == 204:
-            print(f"[*] Found {user} in {team_name}")
-            user_team_cache[user] = team_name
-            return team_name
-            
-    print(f"[*] User {user} not found in any team.")
-    user_team_cache[user] = None
-    return None
 
 def sync_scoreboard(scoreboard_dir):
     run_command('git reset --hard', scoreboard_dir)
@@ -231,11 +185,13 @@ def find_the_last_attack(scoreboard_dir, timestamp, info, config, github):
                 except ValueError:
                     continue
                     
-                if row_timestamp >= timestamp and len(row[4]) == 40:
+                if len(row[4]) == 40:
                     # Check if the attack is against the same defender and branch
                     if row[2] == info['defender'] and row[3] == info['branch']:
                         # Check if the attacker is from the same team
                         row_attacker = row[1]
+                        # row_attacker should already be a team name if recorded correctly,
+                        # but let's use get_user_team to be safe/consistent.
                         row_attacker_team = get_user_team(row_attacker, config, github)
                         
                         # If teams match (and are not None), it's a duplicate attack from the same team
@@ -264,6 +220,15 @@ def get_next_commit(last_commit, defender, branch, config):
 def process_unintended(repo_name, num, config, gen_time, info, scoreboard, id,
                         github, repo_owner):
     unintended_pts = config['unintended_pts']
+    
+    # Resolve attacker to team name for scoreboard
+    attacker_team = get_user_team(info['attacker'], config, github)
+    if attacker_team:
+        print(f"[*] Mapping attacker {info['attacker']} to team {attacker_team}")
+        info['attacker'] = attacker_team
+    else:
+        print(f"[*] Warning: Could not map attacker {info['attacker']} to a team.")
+        
     target_commit = find_the_last_attack(scoreboard, gen_time, info, config, github)
 
     if target_commit is None:

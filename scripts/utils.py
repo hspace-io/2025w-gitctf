@@ -136,3 +136,63 @@ def is_timeover(config):
     current_time = int(time.time())
     end_time = int(iso8601_to_timestamp(config['end_time']))
     return current_time > end_time
+
+# Cache for user teams to avoid repeated API calls
+user_team_cache = {}
+
+STATIC_TEAM_MAP = {
+    # Team 1
+    'Ark3a': 'team_1', 'br0nzu': 'team_1', 'chh41': 'team_1', 'ghdehrl12345': 'team_1',
+    'hy30nq': 'team_1', 'jju00': 'team_1', 'JungWooJJING': 'team_1', 'leejaejjun': 'team_1',
+    'MyNameSarah': 'team_1', 'y3onk': 'team_1',
+    
+    # Team 2
+    'cucu-ground': 'team_2', 'gonas0919': 'team_2', 'hyun1412': 'team_2', 'paeyz': 'team_2',
+    'woozhin': 'team_2', 'yd1ng': 'team_2',
+    
+    # Team 3
+    'ch01jw': 'team_3', 'Jo0dY': 'team_3', 'kwakbumjun713': 'team_3', 'ttuurrnn': 'team_3',
+    'yunttai': 'team_3', 'ZN9812': 'team_3',
+    
+    # Team 4
+    'chojh03': 'team_4', 'fox5t4r': 'team_4', 'hinoohshi': 'team_4', 'jjagong': 'team_4',
+    'sane100400': 'team_4', 'sso29': 'team_4'
+}
+
+def get_user_team(user, config, github):
+    # -1. Check static map
+    if user in STATIC_TEAM_MAP:
+        return STATIC_TEAM_MAP[user]
+
+    # 0. Check if user is already a team name
+    if user in config['teams']:
+        return user
+
+    # 1. Check config first
+    if user in config['individual']:
+        return config['individual'][user]['team']
+    
+    # 2. Check cache
+    if user in user_team_cache:
+        return user_team_cache[user]
+        
+    # 3. Check collaboration status
+    print(f"[*] User {user} not in config. Checking collaboration status...")
+    repo_owner = config['repo_owner']
+    for team_name, team_info in config['teams'].items():
+        repo_name = team_info['repo_name']
+        # Check if user is a collaborator
+        # API: GET /repos/{owner}/{repo}/collaborators/{username}
+        url = f"{github.url}/repos/{repo_owner}/{repo_name}/collaborators/{user}"
+        try:
+            res = github.session.get(url)
+            if res.status_code == 204:
+                print(f"[*] Found {user} in {team_name}")
+                user_team_cache[user] = team_name
+                return team_name
+        except Exception as e:
+            print(f"[*] Error checking collaborator for {user} in {repo_name}: {e}")
+            
+    print(f"[*] User {user} not found in any team.")
+    user_team_cache[user] = None
+    return None
